@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Task Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📋 Admin Panel</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-link active" data-section="dashboard">📊 Dashboard</a>
+                <a href="#" class="nav-link" data-section="messages">💬 Messages</a>
+                <a href="#" class="nav-link" data-section="visitors">👥 Visitors</a>
+                <a href="#" class="nav-link" data-section="users">👤 Users</a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <small>Admin</small>
+                </div>
+                <button id="logoutBtn" class="btn-logout">🚪 Logout</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <button id="mobileMenuBtn" class="mobile-menu-btn">☰</button>
+                <div class="theme-toggle">
+                    <button id="darkModeToggle" class="theme-btn">🌙</button>
+                </div>
+            </div>
+            
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="admin-section active">
+                <h1>Dashboard Overview</h1>
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h3 id="totalUsers">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-info">
+                            <h3 id="totalTasks">0</h3>
+                            <p>Total Tasks</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <h3 id="completedTasks">0</h3>
+                            <p>Completed Tasks</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⏳</div>
+                        <div class="stat-info">
+                            <h3 id="pendingTasks">0</h3>
+                            <p>Pending Tasks</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🌐</div>
+                        <div class="stat-info">
+                            <h3 id="totalVisitors">0</h3>
+                            <p>Total Visitors</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📅</div>
+                        <div class="stat-info">
+                            <h3 id="todayVisitors">0</h3>
+                            <p>Today's Visitors</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💬</div>
+                        <div class="stat-info">
+                            <h3 id="unreadMessages">0</h3>
+                            <p>Unread Messages</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <h2>Recent Visitors</h2>
+                <div class="table-container">
+                    <table id="visitorsTable">
+                        <thead>
+                            <tr><th>IP Address</th><th>Page</th><th>Time</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Messages Section -->
+            <div id="messagesSection" class="admin-section">
+                <h1>Contact Messages</h1>
+                <div id="messagesContainer" class="messages-container"></div>
+            </div>
+            
+            <!-- Visitors Section -->
+            <div id="visitorsSection" class="admin-section">
+                <h1>Visitor Analytics</h1>
+                <div class="table-container">
+                    <table id="allVisitorsTable">
+                        <thead>
+                            <tr><th>IP</th><th>Page</th><th>User Agent</th><th>Time</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Users Section -->
+            <div id="usersSection" class="admin-section">
+                <h1>User Management</h1>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Joined</th><th>Last Login</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/js/main.js"></script>
+    <script src="/js/admin.js"></script>
+</body>
+</html>

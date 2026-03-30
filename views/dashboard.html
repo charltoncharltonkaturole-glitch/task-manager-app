@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Task Manager</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>📋 TaskManager</h2>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="nav-link active">📝 My Tasks</a>
+                <a href="/contact" class="nav-link">📧 Contact Admin</a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span id="userName"></span>
+                </div>
+                <button id="logoutBtn" class="btn-logout">🚪 Logout</button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <button id="mobileMenuBtn" class="mobile-menu-btn">☰</button>
+                <div class="theme-toggle">
+                    <button id="darkModeToggle" class="theme-btn">🌙</button>
+                </div>
+            </div>
+            
+            <!-- Add Task Form -->
+            <div class="add-task-card">
+                <h2>Add New Task</h2>
+                <form id="addTaskForm">
+                    <input type="text" id="taskTitle" placeholder="Task title..." required>
+                    <textarea id="taskDesc" placeholder="Description (optional)" rows="2"></textarea>
+                    <div class="task-options">
+                        <select id="taskPriority">
+                            <option value="low">🟢 Low Priority</option>
+                            <option value="medium">🟡 Medium Priority</option>
+                            <option value="high">🔴 High Priority</option>
+                        </select>
+                        <input type="date" id="taskDueDate">
+                    </div>
+                    <button type="submit" class="btn btn-primary">+ Add Task</button>
+                </form>
+            </div>
+            
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-filter="all">All Tasks</button>
+                <button class="filter-btn" data-filter="pending">Pending</button>
+                <button class="filter-btn" data-filter="completed">Completed</button>
+            </div>
+            
+            <!-- Tasks List -->
+            <div id="tasksContainer" class="tasks-container">
+                <div class="loading">Loading tasks...</div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/js/main.js"></script>
+    <script src="/js/tasks.js"></script>
+</body>
+</html>
