@@ -568,7 +568,11 @@ async function deleteMessage(req, res) {
 app.get('/api/admin/stats', isAdmin, async (req, res) => {
     try {
         const tasksSchema = await getTasksSchema();
-        const [[{ totalUsers }]]     = await db.query('SELECT COUNT(*) as totalUsers FROM users WHERE role = "user"');
+        const [[{ totalUsers }]]     = await db.query(
+            `SELECT COUNT(*) as totalUsers
+             FROM users
+             WHERE (role IS NULL OR role <> 'admin')`
+        );
         const [[{ totalTasks }]]     = await db.query('SELECT COUNT(*) as totalTasks FROM tasks');
         const [[{ completedTasks }]] = tasksSchema.hasStatus
             ? await db.query('SELECT COUNT(*) as completedTasks FROM tasks WHERE status = "completed"')
@@ -598,7 +602,7 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
                     SUM(${tasksSchema.hasStatus ? "t.status = 'completed'" : "t.completed = TRUE"}) as completedCount
              FROM users u
              LEFT JOIN tasks t ON u.id = t.user_id
-             WHERE u.role = 'user'
+             WHERE (u.role IS NULL OR u.role <> 'admin')
              GROUP BY u.id
              ORDER BY u.created_at DESC`
         );
