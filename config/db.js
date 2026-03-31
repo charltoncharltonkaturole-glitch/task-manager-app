@@ -23,25 +23,3 @@ pool.getConnection()
     });
 
 module.exports = pool;
-```
-
----
-
-**The key differences:**
-
-| Before | After |
-|---|---|
-| `require('mysql2')` | `require('mysql2/promise')` |
-| `mysql.createPool({...})` then `.promise()` at the end | Import the promise version directly — cleaner |
-| `pool.getConnection((err, conn) => {})` callback style | `.then().catch()` promise style |
-| `module.exports = pool.promise()` | `module.exports = pool` directly |
-
-The old way called `.promise()` on the pool but then the exported object sometimes lost the `.query()` method depending on the mysql2 version. Importing `mysql2/promise` directly is the correct and reliable way.
-
----
-
-Then push to GitHub:
-```
-git add config/db.js
-git commit -m "fix: use mysql2/promise directly"
-git push
