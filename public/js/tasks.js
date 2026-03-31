@@ -94,14 +94,18 @@ function renderTasks(tasks) {
         return;
     }
     
-    container.innerHTML = tasks.map(task => `
+    container.innerHTML = tasks.map(task => {
+        const isCompleted = task.status
+            ? task.status === 'completed'
+            : !!task.completed;
+        return `
         <div class="task-item" data-task-id="${task.id}">
-            <button class="task-checkbox ${task.status === 'completed' ? 'completed' : ''}" 
-                    onclick="toggleTaskStatus(${task.id}, ${task.status === 'completed'})">
-                ${task.status === 'completed' ? '✓' : ''}
+            <button class="task-checkbox ${isCompleted ? 'completed' : ''}" 
+                    onclick="toggleTaskStatus(${task.id}, ${isCompleted})">
+                ${isCompleted ? '✓' : ''}
             </button>
             <div class="task-content">
-                <div class="task-title ${task.status === 'completed' ? 'completed' : ''}">
+                <div class="task-title ${isCompleted ? 'completed' : ''}">
                     ${escapeHtml(task.title)}
                 </div>
                 ${task.description ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
@@ -117,7 +121,8 @@ function renderTasks(tasks) {
             </div>
             <button class="delete-btn" onclick="deleteTask(${task.id})">🗑️</button>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 async function toggleTaskStatus(taskId, isCompleted) {

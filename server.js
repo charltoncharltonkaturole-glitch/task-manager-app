@@ -32,13 +32,20 @@ app.use(session({
 // =====================================================
 // AUTH MIDDLEWARE
 // =====================================================
+const wantsJson = (req) => {
+    const accept = (req.headers && req.headers.accept) ? String(req.headers.accept) : '';
+    return req.path.startsWith('/api') || accept.includes('application/json');
+};
+
 const isAuthenticated = (req, res, next) => {
     if (req.session && req.session.userId) return next();
+    if (wantsJson(req)) return res.status(401).json({ success: false, error: 'Unauthorized' });
     res.redirect('/login');
 };
 
 const isAdmin = (req, res, next) => {
-    if (req.session && req.session.userRole === 'admin') return next();
+    if (req.session && req.session.userId && req.session.userRole === 'admin') return next();
+    if (wantsJson(req)) return res.status(403).json({ success: false, error: 'Admin only' });
     res.redirect('/login');
 };
 
@@ -273,13 +280,45 @@ app.post('/api/logout', (req, res) => {
 // TASKS API ROUTES
 // =====================================================
 
+let tasksSchemaCache = null;
+let tasksSchemaCacheAt = 0;
+async function getTasksSchema() {
+    const now = Date.now();
+    if (tasksSchemaCache && (now - tasksSchemaCacheAt) < 5 * 60 * 1000) return tasksSchemaCache;
+
+    const [rows] = await db.query(
+        `SELECT COLUMN_NAME
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'tasks'`
+    );
+    const cols = new Set(rows.map(r => String(r.COLUMN_NAME).toLowerCase()));
+
+    tasksSchemaCache = {
+        hasStatus: cols.has('status'),
+        hasCompleted: cols.has('completed'),
+        hasCompletedAt: cols.has('completed_at'),
+        hasDueDate: cols.has('due_date')
+    };
+    tasksSchemaCacheAt = now;
+    return tasksSchemaCache;
+}
+
 // Get tasks
 app.get('/api/tasks', isAuthenticated, async (req, res) => {
     try {
         const filter = req.query.filter || 'all';
+        const schema = await getTasksSchema();
+
         let query = 'SELECT * FROM tasks WHERE user_id = ?';
-        if (filter === 'pending')   query += ' AND (completed = FALSE OR status = "pending")';
-        if (filter === 'completed') query += ' AND (completed = TRUE  OR status = "completed")';
+        if (filter === 'pending') {
+            if (schema.hasStatus) query += ' AND status = "pending"';
+            else query += ' AND (completed = FALSE OR completed IS NULL)';
+        }
+        if (filter === 'completed') {
+            if (schema.hasStatus) query += ' AND status = "completed"';
+            else query += ' AND completed = TRUE';
+        }
         query += ' ORDER BY created_at DESC';
 
         const [tasks] = await db.query(query, [req.session.userId]);
@@ -293,6 +332,8 @@ app.get('/api/tasks', isAuthenticated, async (req, res) => {
 // Create task
 app.post('/api/tasks', isAuthenticated, async (req, res) => {
     try {
+        const schema = await getTasksSchema();
+
         const title       = (req.body.title       || '').trim();
         const description = (req.body.description || '').trim();
         const priority    = req.body.priority    || 'medium';
@@ -325,6 +366,10 @@ app.post('/api/tasks', isAuthenticated, async (req, res) => {
         }
 
         const [rows] = await db.query('SELECT * FROM tasks WHERE id = ?', [result.insertId]);
+        // Normalize for older schemas so the UI can still work
+        if (rows && rows[0] && !schema.hasStatus && rows[0].status === undefined) {
+            rows[0].status = rows[0].completed ? 'completed' : 'pending';
+        }
         res.json({ success: true, task: rows[0] });
 
     } catch (err) {
@@ -337,17 +382,36 @@ app.post('/api/tasks', isAuthenticated, async (req, res) => {
 async function handleTaskUpdate(req, res) {
     try {
         const id = req.params.id;
+        const schema = await getTasksSchema();
 
         // Support both toggle (PATCH) and status update (PUT)
         if (req.body.status !== undefined) {
             // PUT: set specific status
-            const status = req.body.status;
-            await db.query(
-                `UPDATE tasks SET status = ?, completed = ?,
-                 completed_at = ${status === 'completed' ? 'NOW()' : 'NULL'}
-                 WHERE id = ? AND user_id = ?`,
-                [status, status === 'completed', id, req.session.userId]
-            );
+            const status = req.body.status === 'completed' ? 'completed' : 'pending';
+            const completed = status === 'completed';
+
+            if (schema.hasStatus) {
+                await db.query(
+                    `UPDATE tasks SET status = ?, completed = ?,
+                     completed_at = ${completed ? 'NOW()' : 'NULL'}
+                     WHERE id = ? AND user_id = ?`,
+                    [status, completed, id, req.session.userId]
+                );
+            } else {
+                // Older schema: no status column
+                if (schema.hasCompletedAt) {
+                    await db.query(
+                        `UPDATE tasks SET completed = ?, completed_at = ${completed ? 'NOW()' : 'NULL'}
+                         WHERE id = ? AND user_id = ?`,
+                        [completed, id, req.session.userId]
+                    );
+                } else {
+                    await db.query(
+                        'UPDATE tasks SET completed = ? WHERE id = ? AND user_id = ?',
+                        [completed, id, req.session.userId]
+                    );
+                }
+            }
             res.json({ success: true });
         } else {
             // PATCH: toggle completed
@@ -360,10 +424,22 @@ async function handleTaskUpdate(req, res) {
             }
             const completed    = !rows[0].completed;
             const completedAt  = completed ? new Date() : null;
-            await db.query(
-                'UPDATE tasks SET completed = ?, completed_at = ?, status = ? WHERE id = ?',
-                [completed, completedAt, completed ? 'completed' : 'pending', id]
-            );
+            if (schema.hasStatus) {
+                await db.query(
+                    'UPDATE tasks SET completed = ?, completed_at = ?, status = ? WHERE id = ? AND user_id = ?',
+                    [completed, completedAt, completed ? 'completed' : 'pending', id, req.session.userId]
+                );
+            } else if (schema.hasCompletedAt) {
+                await db.query(
+                    'UPDATE tasks SET completed = ?, completed_at = ? WHERE id = ? AND user_id = ?',
+                    [completed, completedAt, id, req.session.userId]
+                );
+            } else {
+                await db.query(
+                    'UPDATE tasks SET completed = ? WHERE id = ? AND user_id = ?',
+                    [completed, id, req.session.userId]
+                );
+            }
             res.json({ success: true, completed });
         }
     } catch (err) {
@@ -491,10 +567,15 @@ async function deleteMessage(req, res) {
 
 app.get('/api/admin/stats', isAdmin, async (req, res) => {
     try {
+        const tasksSchema = await getTasksSchema();
         const [[{ totalUsers }]]     = await db.query('SELECT COUNT(*) as totalUsers FROM users WHERE role = "user"');
         const [[{ totalTasks }]]     = await db.query('SELECT COUNT(*) as totalTasks FROM tasks');
-        const [[{ completedTasks }]] = await db.query('SELECT COUNT(*) as completedTasks FROM tasks WHERE completed = TRUE OR status = "completed"');
-        const [[{ pendingTasks }]]   = await db.query('SELECT COUNT(*) as pendingTasks FROM tasks WHERE completed = FALSE OR status = "pending"');
+        const [[{ completedTasks }]] = tasksSchema.hasStatus
+            ? await db.query('SELECT COUNT(*) as completedTasks FROM tasks WHERE status = "completed"')
+            : await db.query('SELECT COUNT(*) as completedTasks FROM tasks WHERE completed = TRUE');
+        const [[{ pendingTasks }]] = tasksSchema.hasStatus
+            ? await db.query('SELECT COUNT(*) as pendingTasks FROM tasks WHERE status = "pending"')
+            : await db.query('SELECT COUNT(*) as pendingTasks FROM tasks WHERE completed = FALSE OR completed IS NULL');
         const [[{ unreadMessages }]] = await db.query('SELECT COUNT(*) as unreadMessages FROM messages WHERE is_read = FALSE');
 
         // Visitors — try both table structures
@@ -514,7 +595,7 @@ app.get('/api/admin/stats', isAdmin, async (req, res) => {
         const [users] = await db.query(
             `SELECT u.id, u.username, u.email, u.role, u.created_at,
                     COUNT(t.id) as taskCount,
-                    SUM(t.completed = TRUE OR t.status = 'completed') as completedCount
+                    SUM(${tasksSchema.hasStatus ? "t.status = 'completed'" : "t.completed = TRUE"}) as completedCount
              FROM users u
              LEFT JOIN tasks t ON u.id = t.user_id
              WHERE u.role = 'user'

@@ -76,7 +76,7 @@ async function getUserName() {
             const data = await response.json();
             const userNameSpan = document.getElementById('userName');
             if (userNameSpan) {
-                userNameSpan.textContent = data.username;
+                userNameSpan.textContent = (data.user && data.user.username) ? data.user.username : '';
             }
         }
     } catch (err) {
