@@ -67,7 +67,7 @@ function renderVisitorsTable(visitors) {
     tbody.innerHTML = visitors.map(visitor => `
         <tr>
             <td>${visitor.ip_address || 'Unknown'}</td>
-            <td>${visitor.page_visited || 'Unknown'}</td>
+            <td>${visitor.page_visited || visitor.page || 'Unknown'}</td>
             <td>${new Date(visitor.visited_at).toLocaleString()}</td>
         </tr>
     `).join('');
@@ -105,11 +105,11 @@ function renderMessages(messages) {
             <div class="message-header">
                 <div>
                     <div class="message-subject">${escapeHtml(msg.subject || 'No Subject')}</div>
-                    <div class="message-meta">From: ${escapeHtml(msg.name)} (${escapeHtml(msg.email)})</div>
+                    <div class="message-meta">From: ${escapeHtml(msg.name || msg.username || 'Unknown')} (${escapeHtml(msg.email || msg.user_email || 'Unknown')})</div>
                 </div>
                 <div class="message-meta">${new Date(msg.created_at).toLocaleString()}</div>
             </div>
-            <div class="message-content">${escapeHtml(msg.message)}</div>
+            <div class="message-content">${escapeHtml(msg.message || msg.body || '')}</div>
             <div class="message-actions">
                 ${!msg.is_read ? `<button class="mark-read-btn" onclick="markMessageRead(${msg.id})">Mark as Read</button>` : ''}
                 <button class="delete-message-btn" onclick="deleteMessage(${msg.id})">Delete</button>
@@ -164,7 +164,7 @@ async function loadAllVisitors() {
             tbody.innerHTML = data.recentVisitors.map(visitor => `
                 <tr>
                     <td>${visitor.ip_address || 'Unknown'}</td>
-                    <td>${visitor.page_visited || 'Unknown'}</td>
+                    <td>${visitor.page_visited || visitor.page || 'Unknown'}</td>
                     <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
                         ${visitor.user_agent ? visitor.user_agent.substring(0, 50) + '...' : 'Unknown'}
                     </td>

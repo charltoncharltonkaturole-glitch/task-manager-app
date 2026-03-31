@@ -296,16 +296,33 @@ app.post('/api/tasks', isAuthenticated, async (req, res) => {
         const title       = (req.body.title       || '').trim();
         const description = (req.body.description || '').trim();
         const priority    = req.body.priority    || 'medium';
-        const due_date    = req.body.due_date    || null;
+        const due_dateRaw = req.body.due_date;
+        const due_date    = (typeof due_dateRaw === 'string' && due_dateRaw.trim() === '') ? null : (due_dateRaw || null);
 
         if (!title) {
             return res.json({ success: false, error: 'Task title is required.' });
         }
 
-        const [result] = await db.query(
-            'INSERT INTO tasks (user_id, title, description, priority, due_date) VALUES (?,?,?,?,?)',
-            [req.session.userId, title, description || null, priority, due_date]
-        );
+        let result;
+        try {
+            // Newer schema (includes due_date)
+            const [r] = await db.query(
+                'INSERT INTO tasks (user_id, title, description, priority, due_date) VALUES (?,?,?,?,?)',
+                [req.session.userId, title, description || null, priority, due_date]
+            );
+            result = r;
+        } catch (e) {
+            // Older schema on some deployments: tasks table missing due_date
+            if (e && (e.code === 'ER_BAD_FIELD_ERROR' || /Unknown column 'due_date'/i.test(e.message || ''))) {
+                const [r] = await db.query(
+                    'INSERT INTO tasks (user_id, title, description, priority) VALUES (?,?,?,?)',
+                    [req.session.userId, title, description || null, priority]
+                );
+                result = r;
+            } else {
+                throw e;
+            }
+        }
 
         const [rows] = await db.query('SELECT * FROM tasks WHERE id = ?', [result.insertId]);
         res.json({ success: true, task: rows[0] });
