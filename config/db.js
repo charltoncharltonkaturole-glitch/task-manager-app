@@ -4,7 +4,7 @@ const pool = mysql.createPool({
     host:               process.env.MYSQLHOST      || 'localhost',
     user:               process.env.MYSQLUSER      || 'root',
     password:           process.env.MYSQLPASSWORD  || '',
-    database:           process.env.MYSQL_DATABASE || 'taskmanager',
+    database:           process.env.MYSQL_DATABASE || 'railway',
     port:               parseInt(process.env.MYSQLPORT) || 3306,
     waitForConnections: true,
     connectionLimit:    10,
@@ -12,7 +12,6 @@ const pool = mysql.createPool({
     ssl:                false
 });
 
-// Test connection on startup
 pool.getConnection()
     .then(connection => {
         console.log('Connected to MySQL database successfully');
