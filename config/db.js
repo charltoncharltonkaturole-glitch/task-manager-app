@@ -1,11 +1,11 @@
 const mysql = require('mysql2');
 
 const pool = mysql.createPool({
-    host:               process.env.DB_HOST     || 'localhost',
-    user:               process.env.DB_USER     || 'root',
-    password:           process.env.DB_PASS     || '',
-    database:           process.env.DB_NAME     || 'taskmanager',
-    port:               parseInt(process.env.DB_PORT) || 3306,
+    host:               process.env.MYSQLHOST      || 'localhost',
+    user:               process.env.MYSQLUSER      || 'root',
+    password:           process.env.MYSQLPASSWORD  || '',
+    database:           process.env.MYSQL_DATABASE || 'taskmanager',
+    port:               parseInt(process.env.MYSQLPORT) || 3306,
     waitForConnections: true,
     connectionLimit:    10,
     queueLimit:         0,
@@ -21,4 +21,4 @@ pool.getConnection((err, connection) => {
     connection.release();
 });
 
-module.exports = pool.promise();
+
