@@ -4,6 +4,8 @@ const session  = require('express-session');
 const bcrypt   = require('bcryptjs');
 const db       = require('./config/db');
 
+require('dotenv').config();
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
@@ -87,28 +89,28 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login',     redirectIfAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
 app.get('/signup',    redirectIfAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+    res.sendFile(path.join(__dirname, 'views', 'signup.html'));
 });
 
 // support /register as alias for /signup
 app.get('/register',  redirectIfAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+    res.sendFile(path.join(__dirname, 'views', 'signup.html'));
 });
 
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+    res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
 app.get('/admin',     isAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
 app.get('/contact',   isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'contact.html'));
+    res.sendFile(path.join(__dirname, 'views', 'contact.html'));
 });
 
 // =====================================================
